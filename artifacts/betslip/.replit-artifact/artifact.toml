@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "BetSlip"
+description = "A mobile-first NBA betting tracker for privately recording bets, reviewing results, and understanding performance. The first release focuses on secure accounts, manual bet entry, and a persistent dashboard, with a foundation for future screenshot extraction and automatic settlement."
+version = "1.0.0"
+id = "artifacts/betslip"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18737
+
+[services.development]
+run = "pnpm --filter @workspace/betslip run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/betslip", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/betslip/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18737"
+BASE_PATH = "/"

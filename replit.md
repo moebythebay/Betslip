@@ -1,12 +1,14 @@
-# [Project name]
+# BetSlip
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+BetSlip is a private NBA betting ledger for recording bets, reviewing results, and understanding betting performance.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server on the configured `PORT`
+- `pnpm --filter @workspace/betslip run dev` — run the BetSlip web app
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-server run test` — run financial calculation tests
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
@@ -22,23 +24,31 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/betslip` — React/Vite application and app theme
+- `artifacts/api-server/src/routes` — authenticated bet and dashboard endpoints
+- `lib/api-spec/openapi.yaml` — source of truth for API contracts
+- `lib/db/src/schema/bets.ts` — PostgreSQL bet and leg schema
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Clerk provides sign-in; API bet and analytics requests are scoped to the signed-in Clerk user.
+- A multi is one parent bet with separately stored legs; bookmaker returns are recorded, not inferred by multiplying leg odds.
+- Sports are stored as extensible text, while the initial UI and API accept NBA only.
+- ROI uses net profit divided by settled stake; pending bets are excluded from settled performance.
+- Player and market breakdowns use singles only, so combined-bet stake and returns are not incorrectly attributed to individual legs.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Users can record NBA singles, multis, and same-game multis; track leg outcomes; edit or remove entries; search and filter bet history; export CSV; and review settled performance. Screenshot extraction and automatic NBA settlement are not configured in this release.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+The app's name is BetSlip.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After changing `lib/api-spec/openapi.yaml`, run API codegen before typechecking dependent packages.
+- Bet settlement requires an actual bookmaker return and a result for every leg; pending bets do not contribute to ROI.
 
 ## Pointers
 

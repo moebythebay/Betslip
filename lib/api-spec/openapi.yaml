@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: BetSlip NBA bet tracking API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: bets
+    description: Private bet history and manual settlement
+  - name: dashboard
+    description: Bet performance summaries
 paths:
   /healthz:
     get:
@@ -24,6 +28,166 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /bets:
+    get:
+      operationId: listBets
+      tags: [bets]
+      summary: List the signed-in user's bets
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        - name: to
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        - name: bookmaker
+          in: query
+          schema: { type: string }
+        - name: market
+          in: query
+          schema: { type: string }
+        - name: result
+          in: query
+          schema: { $ref: "#/components/schemas/BetStatus" }
+        - name: betType
+          in: query
+          schema: { $ref: "#/components/schemas/BetType" }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Matching bets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Bet" }
+    post:
+      operationId: createBet
+      tags: [bets]
+      summary: Record a bet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BetInput" }
+      responses:
+        "201":
+          description: Bet recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bet" }
+        "400":
+          description: Invalid bet
+  /bets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getBet
+      tags: [bets]
+      summary: Get a bet and its legs
+      responses:
+        "200":
+          description: Bet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bet" }
+        "404":
+          description: Bet not found
+    patch:
+      operationId: updateBet
+      tags: [bets]
+      summary: Correct a bet or record its manual result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BetUpdate" }
+      responses:
+        "200":
+          description: Updated bet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bet" }
+        "400":
+          description: Invalid bet
+        "404":
+          description: Bet not found
+    delete:
+      operationId: deleteBet
+      tags: [bets]
+      summary: Delete a bet and its legs
+      responses:
+        "204":
+          description: Bet deleted
+        "404":
+          description: Bet not found
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get settled performance and open bet totals
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        - name: to
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+      responses:
+        "200":
+          description: Performance summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardSummary" }
+  /dashboard/performance:
+    get:
+      operationId: getDashboardPerformance
+      tags: [dashboard]
+      summary: Get daily settled performance
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        - name: to
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+      responses:
+        "200":
+          description: Daily performance points
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PerformancePoint" }
+  /dashboard/breakdown:
+    get:
+      operationId: getDashboardBreakdown
+      tags: [dashboard]
+      summary: Group settled performance by a dimension
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/BreakdownBy" }
+        - name: from
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        - name: to
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+      responses:
+        "200":
+          description: Performance groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PerformanceBreakdown" }
 components:
   schemas:
     HealthStatus:
@@ -33,4 +197,101 @@ components:
           type: string
       required:
         - status
+    BetType:
+      type: string
+      enum: [single, multi, same_game_multi]
+    BetStatus:
+      type: string
+      enum: [pending, won, lost, push, void]
+    LegInput:
+      type: object
+      additionalProperties: false
+      required: [event, market, selection]
+      properties:
+        event: { type: string, minLength: 1, maxLength: 180 }
+        player: { type: ["string", "null"], maxLength: 120 }
+        market: { type: string, minLength: 1, maxLength: 120 }
+        line: { type: ["number", "null"] }
+        selection: { type: string, minLength: 1, maxLength: 180 }
+        odds: { type: ["number", "null"], exclusiveMinimum: 1 }
+        status: { $ref: "#/components/schemas/BetStatus" }
+    BetLeg:
+      allOf:
+        - $ref: "#/components/schemas/LegInput"
+        - type: object
+          required: [id, status]
+          properties:
+            id: { type: string, format: uuid }
+    BetInput:
+      type: object
+      additionalProperties: false
+      required: [sport, betType, bookmaker, betDate, stake, decimalOdds, status, legs]
+      properties:
+        sport: { type: string, enum: [NBA] }
+        betType: { $ref: "#/components/schemas/BetType" }
+        bookmaker: { type: string, minLength: 1, maxLength: 100 }
+        betDate: { type: string, format: date }
+        event: { type: ["string", "null"], maxLength: 180 }
+        stake: { type: number, exclusiveMinimum: 0 }
+        decimalOdds: { type: number, exclusiveMinimum: 1 }
+        potentialReturn: { type: ["number", "null"], minimum: 0 }
+        actualReturn: { type: ["number", "null"], minimum: 0 }
+        status: { $ref: "#/components/schemas/BetStatus" }
+        notes: { type: ["string", "null"], maxLength: 1000 }
+        legs:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items: { $ref: "#/components/schemas/LegInput" }
+    BetUpdate:
+      $ref: "#/components/schemas/BetInput"
+    Bet:
+      allOf:
+        - $ref: "#/components/schemas/BetInput"
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+            legs:
+              type: array
+              items: { $ref: "#/components/schemas/BetLeg" }
+    DashboardSummary:
+      type: object
+      required:
+        [totalBets, settledBets, pendingBets, totalStaked, settledStake, totalReturns, netProfit, roi, winRate, averageOdds]
+      properties:
+        totalBets: { type: integer }
+        settledBets: { type: integer }
+        pendingBets: { type: integer }
+        totalStaked: { type: number }
+        settledStake: { type: number }
+        totalReturns: { type: number }
+        netProfit: { type: number }
+        roi: { type: number }
+        winRate: { type: number }
+        averageOdds: { type: number }
+    PerformancePoint:
+      type: object
+      required: [date, netProfit, cumulativeProfit, staked]
+      properties:
+        date: { type: string, format: date }
+        netProfit: { type: number }
+        cumulativeProfit: { type: number }
+        staked: { type: number }
+    BreakdownBy:
+      type: string
+      enum: [player, market, bookmaker, betType]
+    PerformanceBreakdown:
+      type: object
+      required: [label, bets, staked, returns, netProfit, roi, winRate]
+      properties:
+        label: { type: string }
+        bets: { type: integer }
+        staked: { type: number }
+        returns: { type: number }
+        netProfit: { type: number }
+        roi: { type: number }
+        winRate: { type: number }
 
