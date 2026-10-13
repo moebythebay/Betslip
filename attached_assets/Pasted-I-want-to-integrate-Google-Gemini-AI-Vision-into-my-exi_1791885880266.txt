@@ -1,0 +1,48 @@
+I want to integrate Google Gemini AI Vision into my existing website.
+
+IMPORTANT:
+
+- Keep my existing website design, styling, layout, animations, and functionality exactly as they are.
+- Do not rebuild the website or remove any existing features.
+- Only add the AI vision functionality and the minimum changes required to connect it.
+
+AI VISION INTEGRATION REQUIREMENTS
+
+1. Use the Google Gemini API with a vision-capable model that is currently available on the free tier.
+2. Allow my existing app to send images to Gemini for AI analysis.
+3. Connect the image analysis to my existing user interface and workflow, using my current upload buttons, camera inputs, or image components wherever applicable.
+4. Return useful, accurate results based on the actual image provided.
+5. Display the AI's response inside my existing website design, matching my current styles.
+6. Add loading indicators, error handling, and a helpful message when an image cannot be analysed.
+7. Keep the integration compatible with my existing technology stack and project structure.
+
+SECURITY REQUIREMENTS
+
+- Never expose the Gemini API key in frontend code, browser JavaScript, client-side environment variables, or publicly accessible files.
+- Store the key securely as a Replit Secret named "GEMINI_API_KEY".
+- Make Gemini API requests through a secure server-side endpoint in my existing backend.
+- Validate image uploads, file types, and file sizes on the server.
+- Do not log API keys or sensitive user data.
+- Do not switch to a paid API or another provider without asking me first.
+
+BEFORE MAKING CHANGES
+
+First inspect my existing project and identify its framework, backend, current image-upload functionality, and how the frontend communicates with the server.
+
+Then implement the integration using my existing architecture. Reuse existing components wherever possible and avoid unnecessary dependencies or changes.
+
+If anything essential is missing, explain what needs to be configured instead of pretending the integration is complete.
+
+FREE-TIER REQUIREMENTS
+
+Use a Gemini vision-capable model that currently supports the free API tier, if available for my account and region. Check the current model availability, API limits, and pricing. Do not assume unlimited free usage.
+
+When finished:
+
+- Tell me exactly which Replit Secret I need to add.
+- Explain how to obtain the Gemini API key.
+- Tell me which files you changed.
+- Give me steps to test the integration with a real image.
+- Confirm whether the integration is using a free-tier model and explain any usage limits or possible charges.
+
+Preserve my existing website and make only the changes needed to get AI vision working.
